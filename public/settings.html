@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Energy Monitor &ndash; Settings</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">Energy Monitor</div>
+    <nav class="tabs">
+      <a href="index.html" class="tab">Dashboard</a>
+      <a href="history.html" class="tab">History</a>
+      <a href="settings.html" class="tab is-active">Settings</a>
+    </nav>
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 20 16" width="20" height="16"><rect y="0" width="20" height="2" fill="currentColor"/><rect y="7" width="20" height="2" fill="currentColor"/><rect y="14" width="20" height="2" fill="currentColor"/></svg>
+    </button>
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <a href="index.html">Dashboard</a>
+      <a href="history.html">History</a>
+      <a href="settings.html" class="is-active">Settings</a>
+    </div>
+  </header>
+
+  <main class="history-main">
+    <section class="card settings-card">
+      <h2>Settings</h2>
+
+      <form id="settings-form">
+        <div class="field-row">
+          <label for="billing-start-day">Billing cycle start day</label>
+          <input type="number" id="billing-start-day" min="1" max="28" required />
+          <p class="card-hint">Day of the month your utility billing cycle begins (1&ndash;28). Used by the
+            Billing Period view in History.</p>
+        </div>
+
+        <div class="field-row">
+          <label for="electricity-rate">Electricity rate ($/kWh)</label>
+          <input type="number" id="electricity-rate" min="0" step="0.01" placeholder="e.g. 0.15" />
+          <p class="card-hint">Used to estimate dollars saved in the Solar Savings card. Leave blank to hide
+            dollar figures.</p>
+        </div>
+
+        <div class="field-row">
+          <button type="submit" class="range-btn is-active" id="settings-save">Save</button>
+          <span class="card-hint" id="settings-status"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="page-footer">Neurio Energy Monitor</footer>
+
+  <script src="nav.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Energy Monitor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">Energy Monitor</div>
+    <nav class="tabs">
+      <a href="index.html" class="tab is-active">Dashboard</a>
+      <a href="history.html" class="tab">History</a>
+      <a href="settings.html" class="tab">Settings</a>
+    </nav>
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 20 16" width="20" height="16"><rect y="0" width="20" height="2" fill="currentColor"/><rect y="7" width="20" height="2" fill="currentColor"/><rect y="14" width="20" height="2" fill="currentColor"/></svg>
+    </button>
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <a href="index.html" class="is-active">Dashboard</a>
+      <a href="history.html">History</a>
+      <a href="settings.html">Settings</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="card power-card" aria-live="polite">
+      <div class="power-card-header">
+        <h2>Current Power</h2>
+        <div class="power-stats">
+          <div class="power-stat">
+            <div class="power-stat-label">Consumption</div>
+            <div class="power-stat-value stat-consumption" id="stat-consumption">&ndash;</div>
+          </div>
+          <div class="power-stat">
+            <div class="power-stat-label">Generation</div>
+            <div class="power-stat-value stat-generation" id="stat-generation">&ndash;</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-sub" id="stat-sub">Waiting for first reading&hellip;</div>
+      <div class="net-line" id="net-line"></div>
+
+      <div class="chart-toolbar">
+        <div class="filter-row" id="range-filter" role="group" aria-label="Time range">
+          <button data-minutes="10" class="range-btn">10m</button>
+          <button data-minutes="60" class="range-btn is-active">1h</button>
+          <button data-minutes="360" class="range-btn">6h</button>
+          <button data-minutes="1440" class="range-btn">24h</button>
+          <button data-minutes="10080" class="range-btn">7d</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <svg id="chart" preserveAspectRatio="none"></svg>
+        <div class="chart-empty" id="chart-empty" hidden>No data yet for this range.</div>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch swatch-consumption"></span>Consumption</span>
+        <span class="legend-item"><span class="legend-swatch swatch-generation"></span>Generation</span>
+        <span class="legend-item"><span class="legend-swatch legend-swatch-dashed"></span>Always On</span>
+      </div>
+    </section>
+
+    <section class="card solar-card">
+      <div class="card-header-row">
+        <h2>Solar Savings</h2>
+        <span class="card-subtitle">Last 30 Days</span>
+      </div>
+      <div class="solar-body">
+        <div class="solar-stat">
+          <div class="solar-stat-label solar-stat-exported-label">Exported to Grid</div>
+          <div class="solar-stat-value solar-stat-exported-value" id="solar-exported">&ndash;</div>
+        </div>
+        <div class="gauge-wrap">
+          <svg id="gauge" viewBox="0 0 160 160"></svg>
+          <div class="gauge-center">
+            <div class="gauge-value" id="gauge-value">&ndash;</div>
+            <div class="gauge-label">From Solar</div>
+            <div class="gauge-sub" id="gauge-saved" hidden></div>
+          </div>
+        </div>
+        <div class="solar-stat">
+          <div class="solar-stat-label stat-consumption">Used from Solar</div>
+          <div class="solar-stat-value stat-consumption" id="solar-used">&ndash;</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card energy-card">
+      <div class="card-header-row">
+        <h2>Energy Use</h2>
+        <span class="card-subtitle">Last 7 Days</span>
+      </div>
+      <div class="energy-body">
+        <div class="energy-gain">
+          <div class="card-hint">Net</div>
+          <div class="gain-value" id="gain-kwh">&ndash;</div>
+        </div>
+        <div class="bar-chart-wrap">
+          <svg id="bar-chart" viewBox="0 0 700 240" preserveAspectRatio="none"></svg>
+          <div class="tooltip" id="bar-tooltip" hidden></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch swatch-consumption"></span>Consumption (kWh)</span>
+        <span class="legend-item"><span class="legend-swatch swatch-generation"></span>Generation (kWh)</span>
+      </div>
+    </section>
+
+    <section class="card always-on-card">
+      <h2>Always On</h2>
+      <p class="card-hint">Lowest consumption observed in the last 24 hours</p>
+      <div class="always-on-value" id="always-on-value">&ndash;</div>
+      <div class="always-on-bar-wrap">
+        <div class="always-on-bar"></div>
+        <div class="always-on-marker" id="always-on-marker"></div>
+      </div>
+      <div class="always-on-scale">
+        <span>0 W</span>
+        <span id="always-on-max-label">&ndash; W</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">Neurio Energy Monitor</footer>
+
+  <script src="chart.js"></script>
+  <script src="nav.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

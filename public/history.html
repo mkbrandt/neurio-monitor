@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Energy Monitor &ndash; History</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">Energy Monitor</div>
+    <nav class="tabs">
+      <a href="index.html" class="tab">Dashboard</a>
+      <a href="history.html" class="tab is-active">History</a>
+      <a href="settings.html" class="tab">Settings</a>
+    </nav>
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 20 16" width="20" height="16"><rect y="0" width="20" height="2" fill="currentColor"/><rect y="7" width="20" height="2" fill="currentColor"/><rect y="14" width="20" height="2" fill="currentColor"/></svg>
+    </button>
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <a href="index.html">Dashboard</a>
+      <a href="history.html" class="is-active">History</a>
+      <a href="settings.html">Settings</a>
+    </div>
+  </header>
+
+  <main class="history-main">
+    <section class="card history-card">
+      <div class="history-header">
+        <h2>Energy Use</h2>
+        <div class="filter-row" id="granularity-tabs" role="group" aria-label="Time granularity">
+          <button data-granularity="hour" class="range-btn is-active">Day</button>
+          <button data-granularity="day" class="range-btn">Month</button>
+          <button data-granularity="month" class="range-btn">Year</button>
+          <button data-granularity="billing" class="range-btn">Billing</button>
+        </div>
+      </div>
+
+      <div class="day-pager">
+        <button class="day-pager-btn" id="prev-period" aria-label="Previous period">&lsaquo;</button>
+        <span class="day-pager-label" id="period-label">Today</span>
+        <button class="day-pager-btn" id="next-period" aria-label="Next period" disabled>&rsaquo;</button>
+      </div>
+
+      <div class="chart-wrap">
+        <svg id="chart" viewBox="0 0 900 300" preserveAspectRatio="none"></svg>
+        <div class="chart-empty" id="chart-empty" hidden>No data for this period.</div>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch swatch-consumption"></span>Consumption (kWh)</span>
+        <span class="legend-item"><span class="legend-swatch swatch-generation"></span>Generation (kWh)</span>
+      </div>
+
+      <div class="stat-section">
+        <h3 class="stat-consumption">Consumption</h3>
+        <div class="stat-grid">
+          <div class="stat-cell">
+            <div class="stat-cell-label" id="c-max-label">Highest</div>
+            <div class="stat-cell-value stat-consumption" id="c-max">&ndash;</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-cell-label" id="c-min-label">Lowest</div>
+            <div class="stat-cell-value stat-consumption" id="c-min">&ndash;</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-cell-label">Average</div>
+            <div class="stat-cell-value stat-consumption" id="c-avg">&ndash;</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-section">
+        <h3 class="stat-generation">Generation</h3>
+        <div class="stat-grid">
+          <div class="stat-cell">
+            <div class="stat-cell-label" id="g-max-label">Highest</div>
+            <div class="stat-cell-value stat-generation" id="g-max">&ndash;</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-cell-label" id="g-min-label">Lowest</div>
+            <div class="stat-cell-value stat-generation" id="g-min">&ndash;</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-cell-label">Average</div>
+            <div class="stat-cell-value stat-generation" id="g-avg">&ndash;</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">Neurio Energy Monitor</footer>
+
+  <script src="chart.js"></script>
+  <script src="nav.js"></script>
+  <script src="history.js"></script>
+</body>
+</html>
