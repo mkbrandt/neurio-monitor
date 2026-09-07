@@ -38,6 +38,25 @@ const rangeStmt = db.prepare(
   'SELECT ts, consumption_w, generation_w, net_w FROM readings WHERE ts >= ? AND ts < ? ORDER BY ts ASC'
 );
 
+// Groups raw readings into fixed-width time buckets and averages each column,
+// so charts over long ranges (6h/24h/7d) don't have to draw one point per
+// 1s raw sample.
+// better-sqlite3 binds plain JS numbers as SQLite REAL, and ts / REAL is a
+// floating-point division (SQLite promotes to REAL if either side is REAL) -
+// so bucketMs is explicitly cast back to INTEGER to force integer division,
+// otherwise every row lands in its own near-unique bucket and nothing groups.
+const sinceAggregatedStmt = db.prepare(`
+  SELECT
+    (CAST(ts AS INTEGER) / CAST(@bucketMs AS INTEGER)) * CAST(@bucketMs AS INTEGER) AS ts,
+    AVG(consumption_w) AS consumption_w,
+    AVG(generation_w) AS generation_w,
+    AVG(net_w) AS net_w
+  FROM readings
+  WHERE ts >= @since
+  GROUP BY CAST(ts AS INTEGER) / CAST(@bucketMs AS INTEGER)
+  ORDER BY ts ASC
+`);
+
 const aggregateStmt = db.prepare(
   `SELECT
     MIN(consumption_w) AS minConsumption, MAX(consumption_w) AS maxConsumption, AVG(consumption_w) AS avgConsumption,
@@ -62,6 +81,11 @@ function getReadingsSince(sinceTs) {
   return sinceStmt.all(sinceTs);
 }
 
+function getReadingsSinceAggregated(sinceTs, bucketMs) {
+  if (!bucketMs || bucketMs <= 1) return getReadingsSince(sinceTs);
+  return sinceAggregatedStmt.all({ since: sinceTs, bucketMs: Math.round(bucketMs) });
+}
+
 function getReadingsInRange(startTs, endTsExclusive) {
   return rangeStmt.all(startTs, endTsExclusive);
 }
@@ -78,6 +102,7 @@ module.exports = {
   insertReading,
   getLatestReading,
   getReadingsSince,
+  getReadingsSinceAggregated,
   getReadingsInRange,
   getAggregate,
   getNetPlusGeneration,

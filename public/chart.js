@@ -62,7 +62,8 @@ function renderTimeSeriesChart(svg, series, opts = {}) {
   const minVal = Math.min(0, ...allPoints.map((p) => p.value));
 
   const yMax = niceStep(maxVal * 1.1 || 100);
-  const yMin = minVal < 0 ? -niceStep(Math.abs(minVal) * 1.1) : 0;
+  const yMinMag = minVal < 0 ? niceStep(Math.abs(minVal) * 1.1) : 0;
+  const yMin = -yMinMag;
   const yRange = yMax - yMin || 1;
 
   const plotW = W - margin.left - margin.right;
@@ -71,16 +72,21 @@ function renderTimeSeriesChart(svg, series, opts = {}) {
   const xScale = (ts) => (maxTs === minTs ? margin.left : margin.left + ((ts - minTs) / (maxTs - minTs)) * plotW);
   const yScale = (v) => margin.top + plotH - ((v - yMin) / yRange) * plotH;
 
-  const tickCount = 4;
-  for (let i = 0; i <= tickCount; i++) {
-    const value = yMin + (yRange / tickCount) * i;
+  // Build ticks as multiples of a shared step out from 0 so 0 always lands exactly on a tick.
+  const step = niceStep(Math.max(yMax, yMinMag) / 4 || 25);
+  const yTicks = [];
+  for (let v = 0; v <= yMax + 1e-9; v += step) yTicks.push(v);
+  for (let v = -step; v >= yMin - 1e-9; v -= step) yTicks.push(v);
+  yTicks.sort((a, b) => a - b);
+
+  for (const value of yTicks) {
     const y = yScale(value);
     const line = document.createElementNS(SVG_NS, 'line');
     line.setAttribute('x1', margin.left);
     line.setAttribute('x2', W - margin.right);
     line.setAttribute('y1', y);
     line.setAttribute('y2', y);
-    line.setAttribute('class', Math.abs(value) < 1e-6 ? 'axis-line' : 'grid-line');
+    line.setAttribute('class', Math.abs(value) < 1e-6 ? 'axis-line axis-line-zero' : 'grid-line');
     svg.appendChild(line);
 
     const label = document.createElementNS(SVG_NS, 'text');
@@ -228,20 +234,23 @@ function renderKwhBarChart(svg, buckets, opts = {}) {
   if (emptyEl) emptyEl.hidden = true;
 
   const values = buckets.flatMap((b) => [b.consumptionKwh, b.generationKwh]);
-  const maxVal = niceStep(Math.max(0, ...values) * 1.1 || 1);
+  const rawMax = Math.max(0, ...values) * 1.1 || 1;
+  const kwhStep = rawMax <= 5 ? 0.5 : 1;
+  const maxVal = Math.ceil(rawMax / kwhStep) * kwhStep;
+  const tickCount = Math.round(maxVal / kwhStep);
   const plotW = W - margin.left - margin.right;
   const plotH = H - margin.top - margin.bottom;
   const yScale = (v) => margin.top + plotH - (v / maxVal) * plotH;
 
-  for (let i = 0; i <= 4; i++) {
-    const value = (maxVal / 4) * i;
+  for (let i = 0; i <= tickCount; i++) {
+    const value = kwhStep * i;
     const y = yScale(value);
     const line = document.createElementNS(SVG_NS, 'line');
     line.setAttribute('x1', margin.left);
     line.setAttribute('x2', W - margin.right);
     line.setAttribute('y1', y);
     line.setAttribute('y2', y);
-    line.setAttribute('class', i === 0 ? 'axis-line' : 'grid-line');
+    line.setAttribute('class', i === 0 ? 'axis-line axis-line-zero' : 'grid-line');
     svg.appendChild(line);
 
     const label = document.createElementNS(SVG_NS, 'text');
@@ -249,7 +258,7 @@ function renderKwhBarChart(svg, buckets, opts = {}) {
     label.setAttribute('y', y + 4);
     label.setAttribute('text-anchor', 'end');
     label.setAttribute('class', 'axis-label');
-    label.textContent = value === 0 ? '0' : value < 1 ? value.toFixed(2) : value < 10 ? value.toFixed(1) : value.toFixed(0);
+    label.textContent = value === 0 ? '0' : Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1);
     svg.appendChild(label);
   }
 

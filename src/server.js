@@ -5,7 +5,7 @@ const express = require('express');
 const { startPolling } = require('./poller');
 const {
   getLatestReading,
-  getReadingsSince,
+  getReadingsSinceAggregated,
   getReadingsInRange,
   getAggregate,
   getNetPlusGeneration,
@@ -149,10 +149,17 @@ app.get('/api/current', (req, res) => {
   });
 });
 
+// Target point count for the history chart, regardless of range - keeps
+// rendering fast (SVG path length, mousemove nearest-point scan) whether the
+// underlying poll interval is 1s or 10s. Buckets narrower than the actual
+// poll interval just come back as one raw sample each (no-op averaging).
+const HISTORY_TARGET_POINTS = 180;
+
 app.get('/api/history', (req, res) => {
   const minutes = Math.min(Number(req.query.minutes) || 60, 10080);
   const since = Date.now() - minutes * 60 * 1000;
-  const rows = getReadingsSince(since);
+  const bucketMs = (minutes * 60 * 1000) / HISTORY_TARGET_POINTS;
+  const rows = getReadingsSinceAggregated(since, bucketMs);
   res.json(
     rows.map((r) => ({
       ts: r.ts,

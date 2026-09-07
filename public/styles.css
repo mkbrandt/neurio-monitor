@@ -304,6 +304,11 @@ main {
   stroke-width: 1;
 }
 
+.axis-line-zero {
+  stroke: var(--text-secondary);
+  stroke-width: 2;
+}
+
 .axis-label {
   fill: var(--text-muted);
   font-size: 11px;
@@ -691,5 +696,9 @@ main {
 
   .solar-body {
     flex-direction: column;
+  }
+
+  .axis-label {
+    font-size: 16.5px;
   }
 }
