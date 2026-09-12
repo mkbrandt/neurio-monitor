@@ -70,26 +70,38 @@
     <section class="card solar-card">
       <div class="card-header-row">
         <h2>Solar Savings</h2>
-        <span class="card-subtitle">Last 30 Days</span>
+        <span class="card-subtitle" id="solar-period-label">Current Billing Period</span>
       </div>
       <div class="solar-body">
         <div class="solar-stat">
-          <div class="solar-stat-label solar-stat-exported-label">Exported to Grid</div>
-          <div class="solar-stat-value solar-stat-exported-value" id="solar-exported">&ndash;</div>
+          <div class="solar-stat-label" id="grid-net-label">&ndash;</div>
+          <div class="solar-stat-value" id="grid-net-value">&ndash;</div>
+          <div class="solar-stat-sub" id="grid-buyback" hidden></div>
         </div>
         <div class="gauge-wrap">
-          <svg id="gauge" viewBox="0 0 160 160"></svg>
-          <div class="gauge-center">
+          <div class="gauge-circle">
+            <svg id="gauge" viewBox="0 0 160 160"></svg>
             <div class="gauge-value" id="gauge-value">&ndash;</div>
-            <div class="gauge-label">From Solar</div>
-            <div class="gauge-sub" id="gauge-saved" hidden></div>
           </div>
+          <div class="gauge-label">From Solar</div>
+          <div class="gauge-caption" id="gauge-saved" hidden></div>
         </div>
         <div class="solar-stat">
           <div class="solar-stat-label stat-consumption">Used from Solar</div>
           <div class="solar-stat-value stat-consumption" id="solar-used">&ndash;</div>
         </div>
       </div>
+      <div class="solar-totals">
+        <div class="solar-stat">
+          <div class="solar-stat-label stat-consumption">Total Consumption</div>
+          <div class="solar-stat-value stat-consumption" id="total-consumption">&ndash;</div>
+        </div>
+        <div class="solar-stat">
+          <div class="solar-stat-label stat-generation">Total Generation</div>
+          <div class="solar-stat-value stat-generation" id="total-generation">&ndash;</div>
+        </div>
+      </div>
+      <div class="solar-fixed-cost" id="fixed-cost-line" hidden></div>
     </section>
 
     <section class="card energy-card">
@@ -99,7 +111,7 @@
       </div>
       <div class="energy-body">
         <div class="energy-gain">
-          <div class="card-hint">Net</div>
+          <div class="card-hint" id="gain-label">Net</div>
           <div class="gain-value" id="gain-kwh">&ndash;</div>
         </div>
         <div class="bar-chart-wrap">

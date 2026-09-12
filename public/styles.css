@@ -416,10 +416,42 @@ main {
   color: var(--good);
 }
 
+.solar-stat-sub {
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--good);
+}
+
+.solar-totals {
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 5vw, 48px);
+  flex-wrap: wrap;
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gridline);
+}
+
+.solar-fixed-cost {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
 .gauge-wrap {
-  position: relative;
   width: 160px;
   flex-shrink: 0;
+}
+
+/* Sized to exactly the SVG so the percent text - a sibling positioned
+   absolutely within this box - centers on the spiral itself. The label and
+   $-saved caption sit outside this box, in normal flow below it, so they
+   can't stretch it and throw the centering off. */
+.gauge-circle {
+  position: relative;
 }
 
 #gauge {
@@ -433,51 +465,34 @@ main {
   stroke: var(--gridline);
 }
 
-.gauge-ring-value {
-  fill: none;
+.gauge-spiral-value {
+  stroke: var(--good);
   stroke-linecap: round;
 }
 
-.ring-outer {
-  stroke: var(--good);
-}
-
-.ring-inner {
-  stroke: var(--consumption);
-}
-
-.gauge-center {
+.gauge-value {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: var(--text-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  text-align: center;
-  line-height: 1.15;
-}
-
-.gauge-value {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 .gauge-label {
-  font-size: 0.625rem;
-  color: #cccccc;
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
 }
 
-.gauge-sub {
-  font-size: 0.625rem;
+.gauge-caption {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 0.8125rem;
   font-weight: 700;
-  margin-top: 4px;
+  color: var(--good);
 }
 
 /* Energy Use card */
@@ -642,6 +657,14 @@ main {
   font-weight: 600;
   min-width: 70px;
   text-align: center;
+}
+
+.cost-line {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
 .stat-section {

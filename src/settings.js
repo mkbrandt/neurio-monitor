@@ -2,7 +2,12 @@ const path = require('path');
 const fs = require('fs');
 
 const settingsPath = path.join(__dirname, '..', 'data', 'settings.json');
-const defaults = { billingCycleStartDay: 1, electricityRateUsdPerKwh: null };
+const defaults = {
+  billingCycleStartDay: 1,
+  electricityRateUsdPerKwh: null,
+  gridBuybackRateUsdPerKwh: null,
+  fixedCostPerBillingPeriodUsd: null,
+};
 
 function loadSettings() {
   try {

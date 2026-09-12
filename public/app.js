@@ -114,28 +114,70 @@ async function refreshHistory() {
   }
 }
 
-function solarShares(consumptionKwh, generationKwh) {
-  if (!(consumptionKwh > 0)) {
-    return generationKwh > 0 ? { solar: 100, grid: 0 } : { solar: 0, grid: 0 };
-  }
-  const solar = Math.min(100, (Math.min(consumptionKwh, generationKwh) / consumptionKwh) * 100);
-  return { solar, grid: 100 - solar };
+// Solar production as a percentage of consumption - unlike "used from solar"
+// this isn't capped at 100%, since a home can generate more than it
+// consumes (net exporting).
+function solarRatioPct(consumptionKwh, generationKwh) {
+  return consumptionKwh > 0 ? (generationKwh / consumptionKwh) * 100 : generationKwh > 0 ? Infinity : 0;
 }
 
-function ringDash(radius, pct) {
-  const circumference = 2 * Math.PI * radius;
-  const filled = (Math.max(0, Math.min(100, pct)) / 100) * circumference;
-  return `${filled.toFixed(2)} ${circumference.toFixed(2)}`;
+// Traces an Archimedean spiral clockwise from 12 o'clock: each full 360°
+// revolution corresponds to 100%, and the radius shrinks a little every
+// revolution, so 100%, 200%, etc. are unmistakable as distinct inward loops
+// rather than a ring that's merely "more filled in". Sampled as a polyline
+// (SVG has no native spiral) at a fixed angular resolution, so the point
+// count - and rendering cost - scales with the percentage, not a fixed cap.
+function spiralPath(cx, cy, outerR, minR, pitchPerLap, percent) {
+  if (!(percent > 0)) return '';
+  const DEGREES_PER_SAMPLE = 4;
+  const samples = Math.max(2, Math.round((percent * 3.6) / DEGREES_PER_SAMPLE));
+  const points = [];
+  for (let i = 0; i <= samples; i++) {
+    const pct = (i / samples) * percent;
+    const angleRad = ((-90 + pct * 3.6) * Math.PI) / 180;
+    const r = Math.max(minR, outerR - pitchPerLap * (pct / 100));
+    points.push(`${(cx + r * Math.cos(angleRad)).toFixed(2)} ${(cy + r * Math.sin(angleRad)).toFixed(2)}`);
+  }
+  return `M ${points.join(' L ')}`;
 }
 
 async function refreshEnergySummary() {
   try {
-    const res = await fetch('/api/energy-summary?days=30');
+    const res = await fetch('/api/energy-summary');
     const data = await res.json();
 
-    document.getElementById('solar-exported').textContent = formatKwh(data.exportedKwh);
+    document.getElementById('solar-period-label').textContent = data.label;
+
+    // A single net grid figure rather than separate "exported"/"imported"
+    // totals - those are both always-accumulating one-directional sums, so
+    // side by side they read as gross production/draw rather than what
+    // actually crossed the meter net over the period. Net > 0 means more
+    // was drawn from the grid than sent to it this period; net < 0 means
+    // the reverse - the label follows whichever actually happened.
+    const netGridKwh = data.importedKwh - data.exportedKwh;
+    const netLabelEl = document.getElementById('grid-net-label');
+    const netValueEl = document.getElementById('grid-net-value');
+    netLabelEl.textContent = netGridKwh >= 0 ? 'Imported from Grid' : 'Exported to Grid';
+    netValueEl.textContent = formatKwh(Math.abs(netGridKwh));
+    netLabelEl.classList.toggle('solar-stat-exported-label', netGridKwh < 0);
+    netValueEl.classList.toggle('solar-stat-exported-value', netGridKwh < 0);
+    netLabelEl.classList.toggle('stat-consumption', netGridKwh >= 0);
+    netValueEl.classList.toggle('stat-consumption', netGridKwh >= 0);
+
+    // Gross exported energy's dollar value, at whatever buyback rate is
+    // configured - independent of the net figure above, since a home can
+    // export plenty during the day and still be a net importer overall.
+    const buybackEl = document.getElementById('grid-buyback');
+    if (typeof data.gridBuybackUsd === 'number') {
+      buybackEl.hidden = false;
+      buybackEl.textContent = `Buyback $${data.gridBuybackUsd.toFixed(2)}`;
+    } else {
+      buybackEl.hidden = true;
+    }
+
     document.getElementById('solar-used').textContent = formatKwh(data.usedFromSolarKwh);
-    document.getElementById('gauge-value').textContent = `${Math.round(data.percentFromSolar)}%`;
+    document.getElementById('total-consumption').textContent = formatKwh(data.consumptionKwh);
+    document.getElementById('total-generation').textContent = formatKwh(data.generationKwh);
 
     const savedEl = document.getElementById('gauge-saved');
     if (typeof data.costSavedUsd === 'number') {
@@ -145,22 +187,24 @@ async function refreshEnergySummary() {
       savedEl.hidden = true;
     }
 
-    const shares = solarShares(data.consumptionKwh, data.generationKwh);
+    const fixedCostEl = document.getElementById('fixed-cost-line');
+    if (typeof data.fixedCostUsd === 'number') {
+      fixedCostEl.hidden = false;
+      fixedCostEl.textContent = `Fixed Cost: $${data.fixedCostUsd.toFixed(2)} (flat, this period)`;
+    } else {
+      fixedCostEl.hidden = true;
+    }
+
+    const ratio = solarRatioPct(data.consumptionKwh, data.generationKwh);
+    document.getElementById('gauge-value').textContent = Number.isFinite(ratio) ? `${Math.round(ratio)}%` : '∞%';
+
     const gaugeSvg = document.getElementById('gauge');
-    const cx = 80, cy = 80, outerR = 64, innerR = 46, strokeW = 14;
-    const outerArc = shares.solar > 0.5
-      ? `<circle class="gauge-ring-value ring-outer" cx="${cx}" cy="${cy}" r="${outerR}" stroke-width="${strokeW}"
-          stroke-dasharray="${ringDash(outerR, shares.solar)}" transform="rotate(-90 ${cx} ${cy})"></circle>`
-      : '';
-    const innerArc = shares.grid > 0.5
-      ? `<circle class="gauge-ring-value ring-inner" cx="${cx}" cy="${cy}" r="${innerR}" stroke-width="${strokeW}"
-          stroke-dasharray="${ringDash(innerR, shares.grid)}" transform="rotate(-90 ${cx} ${cy})"></circle>`
-      : '';
+    const cx = 80, cy = 80, outerR = 68, minR = 4, pitchPerLap = 16, strokeW = 10;
+    const displayPercent = Number.isFinite(ratio) ? ratio : 500;
     gaugeSvg.innerHTML = `
       <circle class="gauge-ring-track" cx="${cx}" cy="${cy}" r="${outerR}" stroke-width="${strokeW}"></circle>
-      <circle class="gauge-ring-track" cx="${cx}" cy="${cy}" r="${innerR}" stroke-width="${strokeW}"></circle>
-      ${outerArc}
-      ${innerArc}
+      <path class="gauge-spiral-value" d="${spiralPath(cx, cy, outerR, minR, pitchPerLap, displayPercent)}"
+        stroke-width="${strokeW}" fill="none"></path>
     `;
   } catch (err) {
     document.getElementById('gauge-value').textContent = '–';
@@ -182,8 +226,13 @@ async function refreshEnergyByDay() {
     const totalConsumption = rows.reduce((sum, r) => sum + r.consumptionKwh, 0);
     const totalGeneration = rows.reduce((sum, r) => sum + r.generationKwh, 0);
     const net = totalConsumption - totalGeneration;
+    // Labeled by direction rather than signed, matching the Solar Savings
+    // card's net-grid stat - "-5.2 kWh" reads as an error at a glance,
+    // "Net Export 5.2 kWh" doesn't need the reader to know the sign
+    // convention.
+    document.getElementById('gain-label').textContent = net > 0 ? 'Net Import' : net < 0 ? 'Net Export' : 'Net';
     const gainEl = document.getElementById('gain-kwh');
-    gainEl.textContent = `${net > 0 ? '+' : net < 0 ? '-' : ''}${formatKwh(Math.abs(net))}`;
+    gainEl.textContent = formatKwh(Math.abs(net));
     gainEl.classList.remove('net-import', 'net-export');
     gainEl.classList.add(net > 0 ? 'net-import' : net < 0 ? 'net-export' : '');
   } catch (err) {

@@ -15,6 +15,10 @@ function statOrDash(value) {
   return typeof value === 'number' && !Number.isNaN(value) ? formatKwh(value) : '–';
 }
 
+function formatUsd(value) {
+  return `${value < 0 ? '-' : ''}$${Math.abs(value).toFixed(2)}`;
+}
+
 async function loadPeriod() {
   const svg = document.getElementById('chart');
   const emptyEl = document.getElementById('chart-empty');
@@ -28,10 +32,19 @@ async function loadPeriod() {
     document.getElementById('period-label').textContent = data.label;
     nextBtn.disabled = !data.canGoForward;
 
+    const costEl = document.getElementById('cost-line');
+    if (granularity === 'billing' && typeof data.projectedCostUsd === 'number') {
+      costEl.hidden = false;
+      costEl.textContent = `Projected Cost: ${formatUsd(data.projectedCostUsd)}`;
+    } else {
+      costEl.hidden = true;
+    }
+
     const buckets = data.buckets.map((b) => ({
       label: bucketLabel(b.ts, granularity),
       consumptionKwh: b.consumptionKwh,
       generationKwh: b.generationKwh,
+      costUsd: b.costUsd,
     }));
 
     const layout = renderKwhBarChart(svg, buckets, { width: 900, height: 300, maxLabels: 12, emptyEl });

@@ -235,7 +235,10 @@ function renderKwhBarChart(svg, buckets, opts = {}) {
 
   const values = buckets.flatMap((b) => [b.consumptionKwh, b.generationKwh]);
   const rawMax = Math.max(0, ...values) * 1.1 || 1;
-  const kwhStep = rawMax <= 5 ? 0.5 : 1;
+  // A fixed 0.5/1 kWh step meant a year view (buckets in the tens of kWh)
+  // drew dozens of gridlines. niceStep rounds to a 1/2/5x10^n step sized to
+  // the actual range, targeting ~4 intervals regardless of magnitude.
+  const kwhStep = niceStep(rawMax / 4);
   const maxVal = Math.ceil(rawMax / kwhStep) * kwhStep;
   const tickCount = Math.round(maxVal / kwhStep);
   const plotW = W - margin.left - margin.right;
@@ -289,6 +292,17 @@ function renderKwhBarChart(svg, buckets, opts = {}) {
     svg.appendChild(gBar);
 
     bars.push({ x: groupX, bucket: b });
+
+    if (typeof b.costUsd === 'number') {
+      const topY = Math.min(yScale(b.consumptionKwh), yScale(b.generationKwh));
+      const costLabel = document.createElementNS(SVG_NS, 'text');
+      costLabel.setAttribute('x', groupX);
+      costLabel.setAttribute('y', Math.max(margin.top + 8, topY - 6));
+      costLabel.setAttribute('text-anchor', 'middle');
+      costLabel.setAttribute('class', 'bar-cost-label');
+      costLabel.textContent = `${b.costUsd < 0 ? '-' : ''}$${Math.abs(b.costUsd).toFixed(0)}`;
+      svg.appendChild(costLabel);
+    }
 
     if (i % labelStride === 0 || i === buckets.length - 1) {
       const label = document.createElementNS(SVG_NS, 'text');
