@@ -121,24 +121,14 @@ function solarRatioPct(consumptionKwh, generationKwh) {
   return consumptionKwh > 0 ? (generationKwh / consumptionKwh) * 100 : generationKwh > 0 ? Infinity : 0;
 }
 
-// Traces an Archimedean spiral clockwise from 12 o'clock: each full 360°
-// revolution corresponds to 100%, and the radius shrinks a little every
-// revolution, so 100%, 200%, etc. are unmistakable as distinct inward loops
-// rather than a ring that's merely "more filled in". Sampled as a polyline
-// (SVG has no native spiral) at a fixed angular resolution, so the point
-// count - and rendering cost - scales with the percentage, not a fixed cap.
-function spiralPath(cx, cy, outerR, minR, pitchPerLap, percent) {
-  if (!(percent > 0)) return '';
-  const DEGREES_PER_SAMPLE = 4;
-  const samples = Math.max(2, Math.round((percent * 3.6) / DEGREES_PER_SAMPLE));
-  const points = [];
-  for (let i = 0; i <= samples; i++) {
-    const pct = (i / samples) * percent;
-    const angleRad = ((-90 + pct * 3.6) * Math.PI) / 180;
-    const r = Math.max(minR, outerR - pitchPerLap * (pct / 100));
-    points.push(`${(cx + r * Math.cos(angleRad)).toFixed(2)} ${(cy + r * Math.sin(angleRad)).toFixed(2)}`);
-  }
-  return `M ${points.join(' L ')}`;
+// Length of a ring's colored arc as a stroke-dasharray, clockwise from 12
+// o'clock: `fraction` of 1 draws a full circle. Paired with a plain <circle>
+// (stroke-dasharray unset) rotated -90deg so the arc starts at the top rather
+// than the default 3 o'clock.
+function ringDasharray(r, fraction) {
+  const circumference = 2 * Math.PI * r;
+  const dash = Math.max(0, Math.min(1, fraction)) * circumference;
+  return `${dash.toFixed(2)} ${circumference.toFixed(2)}`;
 }
 
 async function refreshEnergySummary() {
@@ -198,13 +188,25 @@ async function refreshEnergySummary() {
     const ratio = solarRatioPct(data.consumptionKwh, data.generationKwh);
     document.getElementById('gauge-value').textContent = Number.isFinite(ratio) ? `${Math.round(ratio)}%` : '∞%';
 
+    // Two concentric rings rather than one: an inner ring fills blue from
+    // 0-100% (how much of consumption solar covered), and an outer ring
+    // fills green from 100-200%+ (how far production ran past consumption) -
+    // so "covering usage" and "overproducing" read as distinct rings rather
+    // than one ring that's merely "more filled in" past 100%. An infinite
+    // ratio (generation with zero consumption) reads as a fully filled
+    // outer ring, same as any ratio of 200% or more.
     const gaugeSvg = document.getElementById('gauge');
-    const cx = 80, cy = 80, outerR = 68, minR = 4, pitchPerLap = 16, strokeW = 10;
-    const displayPercent = Number.isFinite(ratio) ? ratio : 500;
+    const cx = 80, cy = 80, outerR = 68, innerR = 50, strokeW = 10;
+    const displayPercent = Number.isFinite(ratio) ? ratio : 200;
+    const innerFraction = Math.min(displayPercent, 100) / 100;
+    const outerFraction = Math.max(0, Math.min(displayPercent, 200) - 100) / 100;
     gaugeSvg.innerHTML = `
       <circle class="gauge-ring-track" cx="${cx}" cy="${cy}" r="${outerR}" stroke-width="${strokeW}"></circle>
-      <path class="gauge-spiral-value" d="${spiralPath(cx, cy, outerR, minR, pitchPerLap, displayPercent)}"
-        stroke-width="${strokeW}" fill="none"></path>
+      <circle class="gauge-ring-track" cx="${cx}" cy="${cy}" r="${innerR}" stroke-width="${strokeW}"></circle>
+      <circle class="gauge-ring-value gauge-ring-outer" cx="${cx}" cy="${cy}" r="${outerR}" stroke-width="${strokeW}"
+        stroke-dasharray="${ringDasharray(outerR, outerFraction)}" transform="rotate(-90 ${cx} ${cy})"></circle>
+      <circle class="gauge-ring-value gauge-ring-inner" cx="${cx}" cy="${cy}" r="${innerR}" stroke-width="${strokeW}"
+        stroke-dasharray="${ringDasharray(innerR, innerFraction)}" transform="rotate(-90 ${cx} ${cy})"></circle>
     `;
   } catch (err) {
     document.getElementById('gauge-value').textContent = '–';

@@ -55,6 +55,8 @@ async function loadPeriod() {
     document.getElementById('c-min-label').textContent = `Lowest ${unit}`;
     document.getElementById('g-max-label').textContent = `Highest ${unit}`;
     document.getElementById('g-min-label').textContent = `Lowest ${unit}`;
+    document.getElementById('n-max-label').textContent = `Highest ${unit}`;
+    document.getElementById('n-min-label').textContent = `Lowest ${unit}`;
 
     document.getElementById('c-max').textContent = statOrDash(data.stats.consumption.max);
     document.getElementById('c-min').textContent = statOrDash(data.stats.consumption.min);
@@ -62,6 +64,34 @@ async function loadPeriod() {
     document.getElementById('g-max').textContent = statOrDash(data.stats.generation.max);
     document.getElementById('g-min').textContent = statOrDash(data.stats.generation.min);
     document.getElementById('g-avg').textContent = statOrDash(data.stats.generation.avg);
+
+    const totalConsumption = data.buckets.reduce((sum, b) => sum + b.consumptionKwh, 0);
+    const totalGeneration = data.buckets.reduce((sum, b) => sum + b.generationKwh, 0);
+    document.getElementById('c-total').textContent = statOrDash(totalConsumption);
+    document.getElementById('g-total').textContent = statOrDash(totalGeneration);
+
+    // Net = consumption - generation, positive meaning that bucket/period was
+    // a net grid import and negative a net export - same convention as the
+    // dashboard's net-grid figure. Each net cell carries its own direction
+    // rather than a shared label, since the highest, lowest, average and
+    // total can each land on a different side of zero.
+    const setNetCell = (id, value) => {
+      const el = document.getElementById(id);
+      el.classList.remove('net-import', 'net-export');
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        el.textContent = '–';
+        return;
+      }
+      const direction = value > 0 ? 'Imp' : value < 0 ? 'Exp' : '';
+      el.textContent = `${formatKwh(Math.abs(value))}${direction ? ' ' + direction : ''}`;
+      if (value > 0) el.classList.add('net-import');
+      else if (value < 0) el.classList.add('net-export');
+    };
+
+    setNetCell('n-max', data.stats.net.max);
+    setNetCell('n-min', data.stats.net.min);
+    setNetCell('n-avg', data.stats.net.avg);
+    setNetCell('n-total', totalConsumption - totalGeneration);
   } catch (err) {
     renderKwhBarChart(svg, [], { emptyEl });
   }

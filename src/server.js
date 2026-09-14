@@ -390,6 +390,7 @@ app.get('/api/history-buckets', (req, res) => {
 
   const consumptionValues = statsBuckets.map((b) => b.consumptionKwh);
   const generationValues = statsBuckets.map((b) => b.generationKwh);
+  const netValues = statsBuckets.map((b) => b.consumptionKwh - b.generationKwh);
   const avg = (values) => (values.length ? values.reduce((sum, v) => sum + v, 0) / values.length : null);
   const min = (values) => (values.length ? Math.min(...values) : null);
   const max = (values) => (values.length ? Math.max(...values) : null);
@@ -422,6 +423,10 @@ app.get('/api/history-buckets', (req, res) => {
     stats: {
       consumption: { min: min(consumptionValues), max: max(consumptionValues), avg: avg(consumptionValues) },
       generation: { min: min(generationValues), max: max(generationValues), avg: avg(generationValues) },
+      // Net = consumption - generation per bucket, so positive means that
+      // bucket was a net grid import and negative a net export - same sign
+      // convention as the dashboard's net-grid figure.
+      net: { min: min(netValues), max: max(netValues), avg: avg(netValues) },
     },
   };
 

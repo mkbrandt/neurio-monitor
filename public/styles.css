@@ -447,8 +447,8 @@ main {
 }
 
 /* Sized to exactly the SVG so the percent text - a sibling positioned
-   absolutely within this box - centers on the spiral itself. The label and
-   $-saved caption sit outside this box, in normal flow below it, so they
+   absolutely within this box - centers on the rings themselves. The label
+   and $-saved caption sit outside this box, in normal flow below it, so they
    can't stretch it and throw the centering off. */
 .gauge-circle {
   position: relative;
@@ -465,9 +465,17 @@ main {
   stroke: var(--gridline);
 }
 
-.gauge-spiral-value {
-  stroke: var(--good);
+.gauge-ring-value {
+  fill: none;
   stroke-linecap: round;
+}
+
+.gauge-ring-inner {
+  stroke: var(--consumption);
+}
+
+.gauge-ring-outer {
+  stroke: var(--good);
 }
 
 .gauge-value {
