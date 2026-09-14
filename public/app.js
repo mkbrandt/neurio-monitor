@@ -215,18 +215,23 @@ async function refreshEnergySummary() {
 
 async function refreshEnergyByDay() {
   try {
-    const res = await fetch('/api/energy-by-day?days=7');
-    const rows = await res.json();
-    const buckets = rows.map((r) => ({
-      label: new Date(r.date + 'T12:00:00').toLocaleDateString([], { weekday: 'narrow' }),
-      consumptionKwh: r.consumptionKwh,
-      generationKwh: r.generationKwh,
+    const res = await fetch('/api/history-buckets?granularity=billing&offset=0');
+    const data = await res.json();
+    document.getElementById('energy-period-label').textContent = data.label;
+
+    const buckets = data.buckets.map((b) => ({
+      label: (() => {
+        const d = new Date(b.ts);
+        return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
+      })(),
+      consumptionKwh: b.consumptionKwh,
+      generationKwh: b.generationKwh,
     }));
-    const layout = renderKwhBarChart(document.getElementById('bar-chart'), buckets, { width: 700, height: 240 });
+    const layout = renderKwhBarChart(document.getElementById('bar-chart'), buckets, { width: 700, height: 240, maxLabels: 10 });
     setupBarHover(document.getElementById('bar-chart'), layout, document.getElementById('bar-chart').parentElement, document.getElementById('bar-tooltip'));
 
-    const totalConsumption = rows.reduce((sum, r) => sum + r.consumptionKwh, 0);
-    const totalGeneration = rows.reduce((sum, r) => sum + r.generationKwh, 0);
+    const totalConsumption = data.buckets.reduce((sum, b) => sum + b.consumptionKwh, 0);
+    const totalGeneration = data.buckets.reduce((sum, b) => sum + b.generationKwh, 0);
     const net = totalConsumption - totalGeneration;
     // Labeled by direction rather than signed, matching the Solar Savings
     // card's net-grid stat - "-5.2 kWh" reads as an error at a glance,
